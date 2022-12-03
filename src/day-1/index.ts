@@ -9,8 +9,8 @@ import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
 import {IntFromString} from 'io-ts-types/lib/IntFromString'
 import {Int, Validation} from "io-ts";
 import {ord} from "fp-ts";
+import {add} from "../utils/number";
 
-const add = (a: number, b: number) => a + b
 
 let i = 0
 const groupByElf = RNEA.reduce([], (s: string[], ss: string) => {
