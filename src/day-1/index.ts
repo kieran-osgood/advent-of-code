@@ -1,45 +1,21 @@
+import {data} from './data'
 import * as S from 'fp-ts/lib/string'
-// import {data} from './data'
-export const data = `8462
-6981
-
-6702
-7898
-
-6787`
-import {Eq} from 'fp-ts/Eq'
 import * as A from 'fp-ts/Array'
 import * as E from 'fp-ts/Either'
+import * as O from 'fp-ts/Option'
 import * as N from 'fp-ts/number'
-import {flow, pipe} from 'fp-ts/function'
+import {flow, pipe,} from 'fp-ts/function'
 import * as RNEA from 'fp-ts/ReadonlyNonEmptyArray'
-import {compose} from "fp-ts/lib/pipeable";
-import { IntFromString } from 'io-ts-types/lib/IntFromString'
+import {IntFromString} from 'io-ts-types/lib/IntFromString'
+import {Int, Validation} from "io-ts";
+import {ord} from "fp-ts";
 
-function getItems(): RNEA.ReadonlyNonEmptyArray<string> {
-    return pipe(
-        data,
-        S.split('\n'),
-    )
-}
-
-const group = <A>(S: Eq<A>): ((as: Array<A>) => Array<Array<A>>) => {
-    return A.chop((as) => {
-        const {init, rest} = pipe(
-            as,
-            A.spanLeft((a: A) => S.equals(a, as[0]))
-        )
-        return [init, rest]
-    })
-}
+const add = (a: number, b: number) => a + b
 
 let i = 0
 const groupByElf = RNEA.reduce([], (s: string[], ss: string) => {
     // move index on meeting elf separators
-    if (ss === '') {
-        ++i
-        return s
-    }
+    S.Eq.equals(ss, '') && ++i
 
     const startingS = s[i] ?? ''
 
@@ -48,27 +24,45 @@ const groupByElf = RNEA.reduce([], (s: string[], ss: string) => {
     return s
 })
 
-const sumByElf = (s: string[]) => {
-    return pipe(
-        s,
-        A.map(
-            flow(
-                S.split(' '),
-                RNEA.map(IntFromString.decode),
-            )
-        ),
-    )
-}
-
-const res = pipe(
-    getItems(),
-    id => id, // ?
-    groupByElf, // ?
-    id => id, // ?
-    // sumByElf
-
+const parseToInt = flow(
+    A.map(
+        flow(
+            S.split(' '),
+            RNEA.map(
+                IntFromString.decode,
+            ),
+        )
+    ),
 )
 
-res // ?
+const sumByElf: (a: RNEA.ReadonlyNonEmptyArray<Validation<Int>>[]) => number[] = A.map(
+    flow(
+        RNEA.map(
+            E.getOrElse(() => 0),
+        ),
+        RNEA.reduce(0, add),
+    )
+)
 
-// group(S.Eq)(getItems()) // ?
+const reversedOrdNumber = ord.reverse(N.Ord);
+
+const elfTotals = pipe(
+    data,
+    S.split('\n'),
+    groupByElf,
+    parseToInt,
+    sumByElf,
+    A.sort(reversedOrdNumber),
+)
+
+const part1 = pipe(
+    elfTotals,
+    A.lookup(0),
+    O.getOrElse(() => -1),
+) // ? 67663
+
+const part2 = pipe(
+    elfTotals,
+    A.takeLeft(3),
+    A.reduce(0, add)
+) // ? 199628
