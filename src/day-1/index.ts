@@ -3,7 +3,10 @@ import * as S from 'fp-ts/lib/string'
 export const data = `8462
 6981
 
-6702`
+6702
+7898
+
+6787`
 import {Eq} from 'fp-ts/Eq'
 import * as A from 'fp-ts/Array'
 import * as E from 'fp-ts/Either'
@@ -40,13 +43,12 @@ const groupByElf = RNEA.reduce([], (s: string[], ss: string) => {
 
     const startingS = s[i] ?? ''
 
-    s[s.length] = (startingS + ' ' + ss).trim()
+    s[i] = (startingS + ' ' + ss).trim()
 
     return s
 })
 
 const sumByElf = (s: string[]) => {
-
     return pipe(
         s,
         A.map(
@@ -63,7 +65,10 @@ const res = pipe(
     id => id, // ?
     groupByElf, // ?
     id => id, // ?
-    sumByElf
+    // sumByElf
 
-) // ?
+)
+
+res // ?
+
 // group(S.Eq)(getItems()) // ?
