@@ -43,7 +43,7 @@ const splitByChars = flow(A.map(S.split("")), A.map(RA.toArray))
 
 const splitByLines = flow(S.split("\n"), RA.toArray)
 
-const tupleIntersection = (t: string[][]) => A.intersection(S.Eq)(t[0])(t[1])
+const tupleIntersection2 = (t: string[][]) => A.intersection(S.Eq)(t[0])(t[1])
 
 const intersectionList = flow(
   splitByLines,
@@ -52,10 +52,9 @@ const intersectionList = flow(
       splitStringInTwo, //
       splitByChars,
       A.map(A.uniq(S.Eq)),
-      tupleIntersection,
+      tupleIntersection2,
     ),
   ),
-  (id) => id,
   A.map(calculateCharValue),
   AStd.sum,
 )
@@ -73,5 +72,37 @@ assert.strictEqual(testDataTotal, 157) // ?
 const part1Result = intersectionList(data) // ?
 assert.strictEqual(part1Result, 8085) // ?
 
-const part2Result = intersectionList(data) // ?
-assert.strictEqual(part1Result, 8085) // ?
+const testDataP = `vJrwpWtwJgWrhcsFMMfFFhFp
+jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
+PmmdzqPrVvPwwTWBwg
+wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn
+ttgJtRGJQctTZtZT
+CrZsJsPPZsGzwwsLwLmpwMDw`
+
+// TODO: make a recursive intersection function
+const tupleIntersection3 = (t: string[][]) => {
+  return pipe(
+    t[0], //
+    A.intersection(S.Eq)(t[1]),
+    A.intersection(S.Eq)(t[2]),
+  )
+}
+const chunkByElfGroup = A.chunksOf(3)
+
+const intersectionListPart2 = flow(
+  splitByLines,
+  chunkByElfGroup,
+  A.chain(
+    flow(
+      A.of, //
+      A.map(splitByChars),
+      A.map(tupleIntersection3),
+      A.map(A.uniq(S.Eq)),
+    ),
+  ),
+  A.map(flow(A.map(calculateCharValue), AStd.sum)),
+  AStd.sum,
+)
+
+const part2Result = intersectionListPart2(data) // ?
+assert.strictEqual(part2Result, 2515) // ?
