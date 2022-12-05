@@ -91,7 +91,7 @@ const splitStringInTwo = (id: string): [string, string] => SStd.splitAt(id.lengt
 
 const splitByChars = flow(
     A.map(S.split('')),
-    RA.toArray
+    A.map(RA.toArray)
 )
 
 const splitByLines = flow(
@@ -104,14 +104,9 @@ const tupleIntersection = (a: string[][]) => A.intersection(S.Eq)(a[0])(a[1])
 const intersectionList = pipe(
     data,
     splitByLines,
-    A.map(
-        splitStringInTwo,
-    ),
-
+    A.map(splitStringInTwo),
     A.map(splitByChars),
-    A.map(
-        tupleIntersection,
-    ),
+    A.map(tupleIntersection,),
     A.map(A.uniq(S.Eq)),
     A.map(A.map(calculateCharValue)),
     A.map(AStd.sum),
