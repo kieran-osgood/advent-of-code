@@ -90,7 +90,7 @@ const intersectionListPart2 = flow(
       splitByChars, //
       tupleIntersection3,
       A.uniq(S.Eq),
-      A.map(calculateCharValue), //
+      A.map(calculateCharValue),
       AStd.sum,
     ),
   ),
