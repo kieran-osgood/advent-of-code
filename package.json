@@ -6,6 +6,8 @@
   "author": "kieran-osgood",
   "license": "ISC",
   "dependencies": {
+    "@types/assert": "^1.5.6",
+    "assert": "^2.0.0",
     "eslint": "^8.29.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-config-standard": "^17.0.0",
