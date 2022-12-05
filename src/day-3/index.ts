@@ -104,12 +104,15 @@ const tupleIntersection = (a: string[][]) => A.intersection(S.Eq)(a[0])(a[1])
 const intersectionList = pipe(
     data,
     splitByLines,
-    A.map(splitStringInTwo),
-    A.map(splitByChars),
-    A.map(tupleIntersection,),
-    A.map(A.uniq(S.Eq)),
-    A.map(A.map(calculateCharValue)),
-    A.map(AStd.sum),
+    A.chain(
+        flow(
+            splitStringInTwo,
+            splitByChars,
+            tupleIntersection,
+        )
+    ),
+    A.uniq(S.Eq),
+    A.map(calculateCharValue),
     AStd.sum
 )
 
