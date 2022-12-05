@@ -11,7 +11,7 @@ import {Int, Validation} from "io-ts";
 import {ord} from "fp-ts";
 import {add} from "../utils/number";
 
-
+//TODO: revisit with: https://gcanti.github.io/fp-ts/modules/ReadonlyNonEmptyArray.ts.html#groupby
 let i = 0
 const groupByElf = RNEA.reduce([], (s: string[], ss: string) => {
     // move index on meeting elf separators

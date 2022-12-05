@@ -6,10 +6,28 @@
   "author": "kieran-osgood",
   "license": "ISC",
   "dependencies": {
+    "eslint": "^8.29.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-standard": "^17.0.0",
     "fp-ts": "^2.13.1",
+    "fp-ts-std": "^0.15.1",
     "io-ts": "^2.2.20",
     "io-ts-types": "^0.5.19",
+    "prettier": "^2.8.0",
     "ts-expect": "^1.3.0",
     "zod": "^3.19.1"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "semi": false,
+    "singleQuote": false,
+    "trailingComma": "all"
+  },
+  "eslintConfig": {
+    "parser": "@typescript-eslint/parser",
+    "extends": [
+      "prettier",
+      "standard"
+    ]
   }
 }
