@@ -72,13 +72,6 @@ assert.strictEqual(testDataTotal, 157) // ?
 const part1Result = intersectionList(data) // ?
 assert.strictEqual(part1Result, 8085) // ?
 
-const testDataP = `vJrwpWtwJgWrhcsFMMfFFhFp
-jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
-PmmdzqPrVvPwwTWBwg
-wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn
-ttgJtRGJQctTZtZT
-CrZsJsPPZsGzwwsLwLmpwMDw`
-
 // TODO: make a recursive intersection function
 const tupleIntersection3 = (t: string[][]) => {
   return pipe(
@@ -92,15 +85,15 @@ const chunkByElfGroup = A.chunksOf(3)
 const intersectionListPart2 = flow(
   splitByLines,
   chunkByElfGroup,
-  A.chain(
+  A.map(
     flow(
-      A.of, //
-      A.map(splitByChars),
-      A.map(tupleIntersection3),
-      A.map(A.uniq(S.Eq)),
+      splitByChars, //
+      tupleIntersection3,
+      A.uniq(S.Eq),
+      A.map(calculateCharValue), //
+      AStd.sum,
     ),
   ),
-  A.map(flow(A.map(calculateCharValue), AStd.sum)),
   AStd.sum,
 )
 
