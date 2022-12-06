@@ -80,26 +80,16 @@ const getPart1 = flow(
 const part1Result = getPart1(data)
 assert.strictEqual(part1Result.length, 571) // ?
 
-const checkIfContainedAtAll = (elfPairs: Validation<number>[][]): O.None | O.Some<boolean> => {
-  // elfPairs.length // ?
-  // if (elfPairs.length !== 2) return O.none
-
+const checkIfContainedAtAll = (
+  elfPairs: readonly (readonly number[])[],
+): O.None | O.Some<boolean> => {
   const [[elf1L, elf1U], [elf2L, elf2U]] = elfPairs
 
-  if (
-    elf2L._tag === "Left" ||
-    elf2U._tag === "Left" ||
-    elf1L._tag === "Left" ||
-    elf1U._tag === "Left"
-  ) {
-    return O.none
-  }
+  const elf1U_Gte_elf2L = gte(elf1U, elf2L)
+  const elf2U_Gte_Elf1L = gte(elf2U, elf1L)
 
-  const elf1U_Gte_elf2L = gte(elf1U.right, elf2L.right)
-  const elf2U_Gte_Elf1L = gte(elf2U.right, elf1L.right)
-
-  const elf1_Lte_elf2U = lte(elf1L.right, elf2U.right)
-  const elf2L_Lte_Elf1U = lte(elf2L.right, elf1U.right)
+  const elf1_Lte_elf2U = lte(elf1L, elf2U)
+  const elf2L_Lte_Elf1U = lte(elf2L, elf1U)
 
   switch (true) {
     case elf1U_Gte_elf2L && elf2U_Gte_Elf1L:
@@ -109,13 +99,21 @@ const checkIfContainedAtAll = (elfPairs: Validation<number>[][]): O.None | O.Som
       return O.none
   }
 }
+const unpackEitherArrays = flow(
+  A.map(A.map(E.sequenceArray)),
+  A.map(E.sequenceArray),
+  E.sequenceArray,
+)
 
 const getPart2 = flow(
-  parsePairsToNumber, //
-  A.map(A.filter(A.some(E.isRight))),
-  A.map(checkIfContainedAtAll),
-  A.compact,
+  parsePairsToNumber,
+  unpackEitherArrays,
+
+  E.map(flow(RA.map(checkIfContainedAtAll), RA.compact)),
 )
 
 const part2Result = getPart2(testData) // ?
-assert.strictEqual(part2Result.length, 4) // ?
+assert.strictEqual(part2Result._tag, "Right") // ?
+if (part2Result._tag === "Right") {
+  assert.strictEqual(part2Result.right.length, 4) // ?
+}
