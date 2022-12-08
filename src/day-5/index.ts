@@ -64,54 +64,15 @@ if (O.isNone(stacksAndInstructions)) {
 
 const [stacks, instructions] = stacksAndInstructions.value
 
-// we should split this up so we
-// const getNumberOfColumns = flow(
-//   S.split("\n"), //
-//   RA.last,
-//   O.chain(
-//     flow(
-//       S.trim, //
-//       S.split(" "),
-//       RA.filter(not(S.isEmpty)),
-//       RA.last,
-//     ),
-//   ),
-// )
-
-const getRows = flow(
-  S.split("\n"), //
-  RA.map(
-    // id =>id
-    flow(
-      // S.trim, //
-      S.split(" "),
-      // RA.filter(S.isEmpty),
-    ),
+const getTopsOfStacks: (d: O.Option<string[][]>) => O.None | O.Some<string[]> = O.chain(
+  flow(
+    A.map(A.last), //
+    O.sequenceArray,
+    O.map(RA.toArray),
   ),
 )
 
-const getTopsOfStacks = (d: O.Option<string[][]>) =>
-  pipe(
-    d,
-    O.chain(
-      flow(
-        A.map(A.head), //
-        O.sequenceArray,
-        O.map(RA.toArray),
-      ),
-    ),
-  )
-
-const joinTopsOfStacks = (a: O.Option<string[]>) =>
-  pipe(
-    a, //
-    O.map(
-      flow(
-        RA.toArray, //
-        AStd.join(" "),
-      ),
-    ),
-  )
+const joinTopsOfStacks: (a: O.Option<string[]>) => O.Option<string> = O.map(AStd.join(" "))
 
 const calculatePart1 = flow(
   getStacksAndInstructions, //
@@ -120,12 +81,14 @@ const calculatePart1 = flow(
   O.chain(flow(RA.init, O.map(RA.toArray))),
 )
 
-const part1Result = pipe(
-  calculatePart1(testData),
+const part1Result = flow(
+  calculatePart1,
   O.map(A.map(splitRowsToColumnPositions)),
   O.map(AStd.transpose),
-  getTopsOfStacks,
-  joinTopsOfStacks,
+  O.map(A.map(A.reverse)),
+  (id) => id,
+  // getTopsOfStacks,
+  // joinTopsOfStacks,
 )
-part1Result // ?
+part1Result(testData) // ?
 // assert.strictEqual(part1Result, "CMZ") // ?
