@@ -1,13 +1,9 @@
 import * as S from "fp-ts/string"
-import * as SStd from "fp-ts-std/string"
-import * as AStd from "fp-ts-std/array"
 import * as A from "fp-ts/Array"
 import * as O from "fp-ts/Option"
-import * as B from "fp-ts/Boolean"
 import * as E from "fp-ts/Either"
-import { flow, pipe } from "fp-ts/function"
+import { flow } from "fp-ts/function"
 import * as RA from "fp-ts/ReadonlyArray"
-import { curry2 } from "fp-ts-std/Function"
 import * as assert from "assert"
 import { NumberFromString } from "io-ts-types"
 import { Validation } from "io-ts"
@@ -112,8 +108,8 @@ const getPart2 = flow(
   E.map(flow(RA.map(checkIfContainedAtAll), RA.compact)),
 )
 
-const part2Result = getPart2(testData) // ?
+const part2Result = getPart2(data) // ?
 assert.strictEqual(part2Result._tag, "Right") // ?
 if (part2Result._tag === "Right") {
-  assert.strictEqual(part2Result.right.length, 4) // ?
+  assert.strictEqual(part2Result.right.length, 917) // ?
 }
