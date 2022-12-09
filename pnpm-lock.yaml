@@ -7,6 +7,7 @@ specifiers:
   eslint-config-prettier: ^8.5.0
   eslint-config-standard: ^17.0.0
   fp-ts: ^2.13.1
+  fp-ts-contrib: ^0.1.29
   fp-ts-std: ^0.15.1
   io-ts: ^2.2.20
   io-ts-types: ^0.5.19
@@ -21,6 +22,7 @@ dependencies:
   eslint-config-prettier: 8.5.0_eslint@8.29.0
   eslint-config-standard: 17.0.0_jafpsg2texzosb7zvycotik6am
   fp-ts: 2.13.1
+  fp-ts-contrib: 0.1.29_fp-ts@2.13.1
   fp-ts-std: 0.15.1_sddbbwftoqt3d5g3p7ix53ouca
   io-ts: 2.2.20_fp-ts@2.13.1
   io-ts-types: 0.5.19_3r4zs434vtthvwddf63cdxp364
@@ -642,6 +644,14 @@ packages:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}
     dependencies:
       is-callable: 1.2.7
+    dev: false
+
+  /fp-ts-contrib/0.1.29_fp-ts@2.13.1:
+    resolution: {integrity: sha512-y+f+xlZqYgj2t+Alu/oat10UC491PByvH7XrT0ITc/DbDJK7LDJLShZJy2orjE7PlcJkO5niDenc1A/woyeB/Q==}
+    peerDependencies:
+      fp-ts: ^2.1.2
+    dependencies:
+      fp-ts: 2.13.1
     dev: false
 
   /fp-ts-std/0.15.1_sddbbwftoqt3d5g3p7ix53ouca:

@@ -7,11 +7,11 @@ import * as E from "fp-ts/Either"
 import { flow, pipe } from "fp-ts/function"
 import * as RA from "fp-ts/ReadonlyArray"
 import * as assert from "assert"
-import { NumberFromString } from "io-ts-types"
-import { Validation } from "io-ts"
+import { Int, Validation } from "io-ts"
 import { data } from "./data"
-import { not } from "fp-ts/Predicate"
 import { words } from "fp-ts-std/String"
+import { IntFromString } from "io-ts-types/lib/IntFromString"
+import { not } from "fp-ts/Predicate"
 
 const testData =
   // prettier-ignore
@@ -25,12 +25,33 @@ move 3 from 1 to 3
 move 2 from 2 to 1
 move 1 from 1 to 2`
 
-const d = `    [B] [H]         [F] [J] [V] [B]`
+const is2Tuple = (a: readonly string[]) =>
+  a.length === 2 ? O.some(a as [stacks: string, instructions: string]) : O.none
+
+const splitStackInstructionsString: (
+  s: string,
+) => O.Option<[stacks: string, instructions: string]> = flow(
+  S.split("\n\n"), //
+  is2Tuple,
+)
+
+const getStackString: (s: string) => O.Option<string> = flow(
+  splitStackInstructionsString, //
+  O.chain(A.head),
+)
+const getInstructionString: (s: string) => O.Option<string> = flow(
+  splitStackInstructionsString,
+  O.chain(A.last),
+)
+
+/**
+ * Preparing the stacks
+ */
 
 const splitRowsToColumnPositions = (a: string): Array<string> =>
   pipe(
     a,
-    S.replace(/    /g, " "),
+    S.replace(/ {4}/g, " "),
     words,
     RA.map(
       flow(
@@ -41,54 +62,116 @@ const splitRowsToColumnPositions = (a: string): Array<string> =>
     ),
     RA.toArray,
   )
-// splitRowsToColumnPositions(d) // ?
 
-const is2Tuple = (a: readonly string[]) =>
-  a.length === 2 ? O.some(a as [stacks: string, instructions: string]) : O.none
+const getTopsOfStacks: (a: string[][]) => O.None | O.Some<string[]> = flow(
+  A.map(A.last), //
+  O.sequenceArray,
+  O.map(RA.toArray),
+)
 
-/*
- * 1. splitBy \n\n to get a [stacks: string, instructions: string] tuple
- * 2. assign the number of columns by reading the last line of stacks
- * 3. splitBy \n to get the stacks
- */
-const getStacksAndInstructions: (s: string) => O.Option<[stacks: string, instructions: string]> =
-  flow(
-    S.split("\n\n"), //
-    is2Tuple,
-  )
+const joinTopsOfStacks: (a: O.Option<string[]>) => O.Option<string> = O.map(AStd.join(""))
 
-const stacksAndInstructions = getStacksAndInstructions(testData)
-if (O.isNone(stacksAndInstructions)) {
-  throw new Error("Invalid input")
-}
-
-const [stacks, instructions] = stacksAndInstructions.value
-
-const getTopsOfStacks: (d: O.Option<string[][]>) => O.None | O.Some<string[]> = O.chain(
-  flow(
-    A.map(A.last), //
-    O.sequenceArray,
-    O.map(RA.toArray),
+const readStacksString = flow(
+  getStackString, //
+  O.map(flow(S.split("\n"), RA.toArray)),
+  O.chain(flow(RA.init, O.map(RA.toArray))),
+  O.map(
+    flow(
+      A.map(splitRowsToColumnPositions), //
+      AStd.transpose,
+      A.map(A.reverse),
+      A.map(A.filter(not(S.isEmpty))),
+    ),
   ),
 )
 
-const joinTopsOfStacks: (a: O.Option<string[]>) => O.Option<string> = O.map(AStd.join(" "))
+/**
+ * Preparing the instructions
+ */
 
-const calculatePart1 = flow(
-  getStacksAndInstructions, //
-  O.chain(A.head),
+const matchInstructions = (s: string): RegExpExecArray | null => {
+  const regex = /move (?<move>\d) from (?<from>\d) to (?<to>\d)/g
+  return regex.exec(s)
+}
+
+type Instructions = Record<"from" | "move" | "to", Validation<Int>>
+const convertInstructionsToInt = (o: Record<string, string>): Instructions => ({
+  from: IntFromString.decode(o.from),
+  move: IntFromString.decode(o.move),
+  to: IntFromString.decode(o.to),
+})
+
+const readInstructionLine = flow(
+  matchInstructions,
+  O.fromNullable,
+  O.chain((id) => O.fromNullable(id.groups)),
+  O.map(convertInstructionsToInt),
+)
+
+/**
+ * Parsing the results of the instructions
+ * on the stacks
+ */
+
+const readInstructionString = flow(
+  getInstructionString,
   O.map(flow(S.split("\n"), RA.toArray)),
-  O.chain(flow(RA.init, O.map(RA.toArray))),
+  O.map(A.map(readInstructionLine)),
 )
 
-const part1Result = flow(
-  calculatePart1,
-  O.map(A.map(splitRowsToColumnPositions)),
-  O.map(AStd.transpose),
-  O.map(A.map(A.reverse)),
-  (id) => id,
-  // getTopsOfStacks,
-  // joinTopsOfStacks,
+const readResult: (s: string[][]) => O.None | O.Some<string> = flow(
+  getTopsOfStacks, //
+  joinTopsOfStacks,
 )
-part1Result(testData) // ?
-// assert.strictEqual(part1Result, "CMZ") // ?
+
+const move = (stacks: string[][], instruction: O.Option<Instructions>) => {
+  if (
+    O.isNone(instruction) ||
+    E.isLeft(instruction.value.from) ||
+    E.isLeft(instruction.value.to) ||
+    E.isLeft(instruction.value.move)
+  ) {
+    return stacks
+  }
+
+  const stacksCopy: string[][] = JSON.parse(JSON.stringify(stacks))
+  const fromStackIdx = instruction.value.from.right - 1
+  const toStackIdx = instruction.value.to.right - 1
+
+  const toStack = stacksCopy[toStackIdx]
+  const fromStack = stacksCopy[fromStackIdx]
+  const toMove = fromStack.splice(-instruction.value.move.right).reverse()
+
+  stacksCopy[toStackIdx] = [...toStack, ...toMove]
+
+  return stacksCopy
+}
+
+const moveStacks: (stackInstructions: {
+  stacks: string[][]
+  instructions: O.Option<Instructions>[]
+}) => O.Option<string[][]> = flow(
+  O.of,
+  O.map(
+    ({ stacks, instructions }) =>
+      pipe(
+        instructions, //
+        A.reduce(stacks, move),
+      ),
+    //    need to make sure all arrays same length with empty strings
+  ),
+)
+
+const part1 = (s: string) =>
+  pipe(
+    O.Do,
+    O.bind("instructions", () => readInstructionString(s)),
+    O.bind("stacks", () => readStacksString(s)),
+    O.bind("newStacks", moveStacks),
+    O.bind("result", ({ newStacks }) => readResult(newStacks)),
+  )
+
+const part1Result = part1(testData) // ?
+if (part1Result._tag === "Some") {
+  assert.strictEqual(part1Result.value.result, "CMZ")
+}
