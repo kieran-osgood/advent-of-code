@@ -11,7 +11,6 @@ import { Int, Validation } from "io-ts"
 import { data } from "./data"
 import { words } from "fp-ts-std/String"
 import { IntFromString } from "io-ts-types/lib/IntFromString"
-import { not } from "fp-ts/Predicate"
 
 const testData =
   // prettier-ignore
@@ -28,18 +27,20 @@ move 1 from 1 to 2`
 const is2Tuple = (a: readonly string[]) =>
   a.length === 2 ? O.some(a as [stacks: string, instructions: string]) : O.none
 
-const splitStackInstructionsString: (
-  s: string,
-) => O.Option<[stacks: string, instructions: string]> = flow(
+type SplitStackInstructionsString = (s: string) => O.Option<[stacks: string, instructions: string]>
+const splitStackInstructionsString: SplitStackInstructionsString = flow(
   S.split("\n\n"), //
   is2Tuple,
 )
 
-const getStackString: (s: string) => O.Option<string> = flow(
+type GetStackString = (s: string) => O.Option<string>
+const getStackString: GetStackString = flow(
   splitStackInstructionsString, //
   O.chain(A.head),
 )
-const getInstructionString: (s: string) => O.Option<string> = flow(
+
+type GetInstructionString = (s: string) => O.Option<string>
+const getInstructionString: GetInstructionString = flow(
   splitStackInstructionsString,
   O.chain(A.last),
 )
@@ -57,19 +58,21 @@ const splitRowsToColumnPositions = (a: string): Array<string> =>
       flow(
         SStd.match(/\w/g),
         O.chain(A.head),
-        O.getOrElseW(() => ""),
+        O.getOrElse(() => ""),
       ),
     ),
     RA.toArray,
   )
 
-const getTopsOfStacks: (a: string[][]) => O.None | O.Some<string[]> = flow(
+type GetTopsOfStacks = (a: string[][]) => O.None | O.Some<string[]>
+const getTopsOfStacks: GetTopsOfStacks = flow(
   A.map(A.last), //
   O.sequenceArray,
   O.map(RA.toArray),
 )
 
-const joinTopsOfStacks: (a: O.Option<string[]>) => O.Option<string> = O.map(AStd.join(""))
+type JoinTopsOfStacks = (a: O.Option<string[]>) => O.Option<string>
+const joinTopsOfStacks: JoinTopsOfStacks = O.map(AStd.join(""))
 
 const readStacksString = flow(
   getStackString, //
@@ -77,10 +80,11 @@ const readStacksString = flow(
   O.chain(flow(RA.init, O.map(RA.toArray))),
   O.map(
     flow(
-      A.map(splitRowsToColumnPositions), //
+      A.map(splitRowsToColumnPositions),
       AStd.transpose,
       A.map(A.reverse),
-      A.map(A.filter(not(S.isEmpty))),
+      A.map(A.filter((s) => s !== " " && s !== "")),
+      // A.map(A.filter(not(S.isEmpty))),
     ),
   ),
 )
@@ -89,9 +93,9 @@ const readStacksString = flow(
  * Preparing the instructions
  */
 
-const matchInstructions = (s: string): RegExpExecArray | null => {
-  const regex = /move (?<move>\d) from (?<from>\d) to (?<to>\d)/g
-  return regex.exec(s)
+const matchInstructions = (s: string): O.Option<RegExpExecArray> => {
+  const regex = /move (?<move>\d*) from (?<from>\d*) to (?<to>\d*)/gi
+  return O.fromNullable(regex.exec(s))
 }
 
 type Instructions = Record<"from" | "move" | "to", Validation<Int>>
@@ -101,10 +105,10 @@ const convertInstructionsToInt = (o: Record<string, string>): Instructions => ({
   to: IntFromString.decode(o.to),
 })
 
-const readInstructionLine = flow(
+type ReadInstructionLine = <A>(s: string) => O.Option<Instructions>
+const readInstructionLine: ReadInstructionLine = flow(
   matchInstructions,
-  O.fromNullable,
-  O.chain((id) => O.fromNullable(id.groups)),
+  O.chain((m) => O.fromNullable(m.groups)),
   O.map(convertInstructionsToInt),
 )
 
@@ -115,51 +119,65 @@ const readInstructionLine = flow(
 
 const readInstructionString = flow(
   getInstructionString,
-  O.map(flow(S.split("\n"), RA.toArray)),
-  O.map(A.map(readInstructionLine)),
+  O.map(
+    flow(
+      S.split("\n"), //
+      RA.map(readInstructionLine),
+      O.sequenceArray,
+      O.map(RA.toArray),
+    ),
+  ),
 )
 
-const readResult: (s: string[][]) => O.None | O.Some<string> = flow(
-  getTopsOfStacks, //
-  joinTopsOfStacks,
-)
-
-const move = (stacks: string[][], instruction: O.Option<Instructions>) => {
-  if (
-    O.isNone(instruction) ||
-    E.isLeft(instruction.value.from) ||
-    E.isLeft(instruction.value.to) ||
-    E.isLeft(instruction.value.move)
-  ) {
+const moveCrates = (stacks: string[][], instruction: Instructions) => {
+  if (E.isLeft(instruction.from) || E.isLeft(instruction.to) || E.isLeft(instruction.move)) {
     return stacks
   }
 
   const stacksCopy: string[][] = JSON.parse(JSON.stringify(stacks))
-  const fromStackIdx = instruction.value.from.right - 1
-  const toStackIdx = instruction.value.to.right - 1
+
+  // const fromStackIdx = instruction.from.right - 1
+  // const toStackIdx = instruction.to.right - 1
+  // const count = instruction.move.right
+  //
+  // const movedCrates = stacksCopy[fromStackIdx].splice(0, count)
+  // stacksCopy[toStackIdx].unshift(...movedCrates.reverse())
+  //
+  const toStackIdx = instruction.to.right - 1
+  const fromStackIdx = instruction.from.right - 1
 
   const toStack = stacksCopy[toStackIdx]
   const fromStack = stacksCopy[fromStackIdx]
-  const toMove = fromStack.splice(-instruction.value.move.right).reverse()
 
+  const toMove = fromStack.splice(-instruction.move.right).reverse()
   stacksCopy[toStackIdx] = [...toStack, ...toMove]
 
   return stacksCopy
 }
 
-const moveStacks: (stackInstructions: {
-  stacks: string[][]
-  instructions: O.Option<Instructions>[]
-}) => O.Option<string[][]> = flow(
+type MoveStacks = (stackInstructions: {
+  readonly stacks: string[][]
+  readonly instructions: O.Option<Instructions[]>
+}) => O.Option<string[][]>
+const moveStacks: MoveStacks = flow(
   O.of,
-  O.map(
-    ({ stacks, instructions }) =>
-      pipe(
-        instructions, //
-        A.reduce(stacks, move),
+  O.chain(({ stacks, instructions }) =>
+    pipe(
+      instructions,
+      O.map(
+        flow(
+          A.reduce(stacks, moveCrates),
+          A.map((a) => (a.length === 0 ? [" "] : a)),
+        ),
       ),
-    //    need to make sure all arrays same length with empty strings
+    ),
   ),
+)
+
+type ReadResult = (s: string[][]) => O.Option<string>
+const readResult: ReadResult = flow(
+  getTopsOfStacks, //
+  joinTopsOfStacks,
 )
 
 const part1 = (s: string) =>
@@ -171,7 +189,12 @@ const part1 = (s: string) =>
     O.bind("result", ({ newStacks }) => readResult(newStacks)),
   )
 
-const part1Result = part1(testData) // ?
+const part1Result2 = part1(testData)
+if (part1Result2._tag === "Some") {
+  assert.strictEqual(part1Result2.value.result, "CMZ")
+}
+
+const part1Result = part1(data)
 if (part1Result._tag === "Some") {
-  assert.strictEqual(part1Result.value.result, "CMZ")
+  assert.strictEqual(part1Result.value.result, "VRWBSFZWM")
 }
