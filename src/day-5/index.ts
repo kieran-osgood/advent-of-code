@@ -149,7 +149,7 @@ const moveCrates = (stacks: string[][], instruction: Instructions) => {
   const toStack = stacksCopy[toStackIdx]
   const fromStack = stacksCopy[fromStackIdx]
 
-  const toMove = fromStack.splice(-instruction.move.right).reverse()
+  const toMove = fromStack.splice(-instruction.move.right)
   stacksCopy[toStackIdx] = [...toStack, ...toMove]
 
   return stacksCopy
@@ -191,10 +191,12 @@ const part1 = (s: string) =>
 
 const part1Result2 = part1(testData)
 if (part1Result2._tag === "Some") {
-  assert.strictEqual(part1Result2.value.result, "CMZ")
+  // assert.strictEqual(part1Result2.value.result, "CMZ") // part1
+  assert.strictEqual(part1Result2.value.result, "MCD") //part2
 }
 
 const part1Result = part1(data)
 if (part1Result._tag === "Some") {
-  assert.strictEqual(part1Result.value.result, "VRWBSFZWM")
+  // assert.strictEqual(part1Result.value.result, "VRWBSFZWM") // part1
+  assert.strictEqual(part1Result.value.result, "RBTWJWMCF") // part2
 }
